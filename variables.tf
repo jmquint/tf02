@@ -25,3 +25,12 @@ variable "aws_amis" {
     us-east-1 = "ami-1d4e7a66"
   }
 }
+
+# domain certificate loads from env variable TF_VAR_aws_arn
+# following line should be below the description to set the aws_arn value
+# but it is commented because the value will come from env variable so not anymore needed in the file
+# default = "arn:aws:acm:eu-west-2:234753655476:certificate/d62d7e7c-7462-43bb-aa6d-a27c7b2e9b4f" 
+variable "aws_arn" {
+  description = "certificate arn url from aws certificate store - added for dev env"
+  default = "arn:aws:acm:eu-west-2:234753655476:certificate/d62d7e7c-7462-43bb-aa6d-a27c7b2e9b4f" 
+}

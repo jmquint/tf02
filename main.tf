@@ -42,6 +42,14 @@ resource "aws_security_group" "elb" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # HTTPS access from anywhere
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   # outbound internet access
   egress {
     from_port   = 0
@@ -83,7 +91,6 @@ resource "aws_security_group" "default" {
   }
 }
 
-
 resource "aws_elb" "web" {
   name = "terraform-example-elb"
 
@@ -103,14 +110,20 @@ resource "aws_elb" "web" {
     instance_protocol  = "http"
     lb_port            = 443
     lb_protocol        = "https"
-    ssl_certificate_id = "arn:aws:acm:eu-west-2:234753655476:certificate/d62d7e7c-7462-43bb-aa6d-a27c7b2e9b4f"
+    ssl_certificate_id = "${var.aws_arn}"
   }
 
 }
 
-resource "aws_key_pair" "auth" {
-  key_name   = "${var.key_name}"
-  public_key = "${file(var.public_key_path)}"
+# resource "aws_key_pair" "auth" {
+#   key_name   = "${var.key_name}"
+#   public_key = "${file(var.public_key_path)}"
+# }
+
+resource "aws_volume_attachment" "ebs_att" {
+  device_name = "/dev/sdh"
+  volume_id   = "${aws_ebs_volume.webvol01.id}"
+  instance_id = "${aws_instance.web.id}"
 }
 
 resource "aws_instance" "web" {
@@ -125,13 +138,15 @@ resource "aws_instance" "web" {
   }
 
   instance_type = "t2.micro"
+  key_name = "terraform"
 
   # Lookup the correct AMI based on the region
   # we specified
   ami = "${lookup(var.aws_amis, var.aws_region)}"
 
   # The name of our SSH keypair we created above.
-  key_name = "${aws_key_pair.auth.id}"
+  # key_name = "${aws_key_pair.auth.id}"
+  # key_name = "${aws_key_pair.auth.id}"
 
   # Our Security group to allow HTTP and SSH access
   vpc_security_group_ids = ["${aws_security_group.default.id}"]
@@ -149,6 +164,13 @@ resource "aws_instance" "web" {
       "sudo apt-get -y update",
       "sudo apt-get -y install nginx",
       "sudo service nginx start",
+      "sudo bash -c \"test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)\"",
     ]
   }
 } 
+
+resource "aws_ebs_volume" "webvol01" {
+  availability_zone = "eu-west-2b"
+  size              = 8
+}
+
