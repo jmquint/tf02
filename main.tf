@@ -162,8 +162,6 @@ resource "aws_instance" "web" {
   provisioner "remote-exec" {
     inline = [
       "sudo apt-get -y update",
-      "sudo apt-get -y install nginx",
-      "sudo service nginx start",
       "sudo bash -c \"test -e /usr/bin/python || (apt -qqy update && apt install -qy python-minimal)\"",
     ]
   }
